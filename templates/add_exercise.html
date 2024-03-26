@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add/Update Exercise</title>
+</head>
+<body>
+    <h1>Add Exercise</h1>
+    <form id="addExerciseForm">
+        <div>
+            <label for="category">Category:</label>
+            <input type="text" id="category" name="category">
+        </div>
+        <div>
+            <label for="name">Name:</label>
+            <input type="text" id="name" name="name">
+        </div>
+        <div>
+            <label for="mainTarget">Main Target:</label>
+            <input type="text" id="mainTarget" name="main_target">
+        </div>
+        <div>
+            <label for="secondaryTarget">Secondary Target:</label>
+            <input type="text" id="secondaryTarget" name="secondary_target">
+        </div>
+        <button type="submit">Add Exercise</button>
+    </form>
+
+    <h1>Update Exercise</h1>
+    <form id="updateExerciseForm">
+        <div>
+            <label for="exerciseId">Exercise ID:</label>
+            <input type="number" id="exerciseId" name="exercise_id">
+        </div>
+        <div>
+            <label for="updateCategory">Category:</label>
+            <input type="text" id="updateCategory" name="category">
+        </div>
+        <div>
+            <label for="updateName">Name:</label>
+            <input type="text" id="updateName" name="name">
+        </div>
+        <div>
+            <label for="updateMainTarget">Main Target:</label>
+            <input type="text" id="updateMainTarget" name="main_target">
+        </div>
+        <div>
+            <label for="updateSecondaryTarget">Secondary Target:</label>
+            <input type="text" id="updateSecondaryTarget" name="secondary_target">
+        </div>
+        <button type="submit">Update Exercise</button>
+    </form>
+
+    <script>
+        document.getElementById('addExerciseForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            // Add exercise submission logic
+        });
+
+        document.getElementById('updateExerciseForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const exerciseId = document.getElementById('exerciseId').value;
+            const updateCategory = document.getElementById('updateCategory').value;
+            const updateName = document.getElementById('updateName').value;
+            const updateMainTarget = document.getElementById('updateMainTarget').value;
+            const updateSecondaryTarget = document.getElementById('updateSecondaryTarget').value;
+
+            fetch(`/update_exercise/${exerciseId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    category: updateCategory,
+                    name: updateName,
+                    main_target: updateMainTarget,
+                    secondary_target: updateSecondaryTarget
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exercise List</title>
+</head>
+<body>
+    <h1>Exercise List</h1>
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Category</th>
+            <th>Name</th>
+            <th>Main Target</th>
+            <th>Secondary Target</th>
+        </tr>
+        {% for exercise in exercises %}
+        <tr>
+            <td>{{ exercise.id }}</td>
+            <td>{{ exercise.category }}</td>
+            <td>{{ exercise.name }}</td>
+            <td>{{ exercise.main_target }}</td>
+            <td>{{ exercise.secondary_target }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>
