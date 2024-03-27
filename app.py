@@ -10,6 +10,12 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
+class User(db.Model):
+    __tablename__ = 'user'
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    user_exercises = db.relationship('UserExercise', backref='user', cascade='all, delete-orphan')
+
 class Exercise(db.Model):
     __tablename__ = 'exercise'
     id = db.Column(db.Integer, primary_key=True)
@@ -17,6 +23,16 @@ class Exercise(db.Model):
     name = db.Column(db.String(80), nullable=False)
     main_target = db.Column(db.String(120), nullable=False)
     secondary_target = db.Column(db.String(120), nullable=False)
+    exercise_users = db.relationship('UserExercise', backref='exercise', cascade='all, delete-orphan')
+
+class UserExercise(db.Model):
+    __tablename__ = 'user_exercise'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    exercise_id = db.Column(db.Integer, db.ForeignKey('exercise.id'), nullable=False)
+
+    user = db.relationship('User', backref=db.backref('user_exercises', cascade='all, delete-orphan'))
+    exercise = db.relationship('Exercise', backref=db.backref('exercise_users', cascade='all, delete-orphan'))
 
 @app.route('/')
 def hello_world():
@@ -30,7 +46,7 @@ def display_exercises():
 @app.route('/add_exercise', methods=['POST'])
 def add_exercise():
     if request.method == 'POST':
-        data = request.get_json()  # Assuming the data is sent as JSON
+        data = request.get_json()
         new_exercise = Exercise(
             category=data['category'],
             name=data['name'],
@@ -53,7 +69,7 @@ def update_exercise(exercise_id):
         exercise = Exercise.query.get(exercise_id)
         if exercise is None:
             return jsonify({'message': 'Exercise not found'}), 404
-        data = request.get_json()  # Assuming the data is sent as JSON
+        data = request.get_json()
         exercise.category = data.get('category', exercise.category)
         exercise.name = data.get('name', exercise.name)
         exercise.main_target = data.get('main_target', exercise.main_target)
@@ -91,6 +107,14 @@ def get_exercise(exercise_id):
         'secondary_target': exercise.secondary_target
     }
     return jsonify({'exercise': exercise_data})
+
+@app.route('/register', methods=['POST'])
+def register_user():
+    data = request.get_json()
+    new_user = User(email=data['email'])
+    db.session.add(new_user)
+    db.session.commit()
+    return jsonify({'message': 'User registered successfully'})
 
 if __name__ == '__main__':
     app.run(debug=True)
