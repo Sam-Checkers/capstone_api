@@ -14,7 +14,7 @@ class User(db.Model):
     __tablename__ = 'user'
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
-    exercises = db.relationship('UserExercise', backref='user', cascade='all, delete-orphan')
+    exercises = db.relationship('UserExercise', back_populates='user', cascade='all, delete-orphan')
 
 class Exercise(db.Model):
     __tablename__ = 'exercise'
@@ -23,7 +23,7 @@ class Exercise(db.Model):
     name = db.Column(db.String(80), nullable=False)
     main_target = db.Column(db.String(120), nullable=False)
     secondary_target = db.Column(db.String(120), nullable=False)
-    user = db.relationship('User', backref='user_exercises', cascade='all, delete-orphan')
+    user = db.relationship('User', back_populates='exercises', cascade='all, delete-orphan')
 
 class UserExercise(db.Model):
     __tablename__ = 'user_exercise'
