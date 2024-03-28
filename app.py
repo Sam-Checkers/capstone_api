@@ -12,6 +12,8 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
+CORS(app)
+
 class User(db.Model):
     __tablename__ = 'user'
     id = db.Column(db.Integer, primary_key=True)
@@ -108,6 +110,35 @@ def add_user_exercise(exercise_id):
             return "User not logged in", 401
     except Exception as e:
         return f"An error occurred: {str(e)}", 500
+    
+@app.route('/get_all_exercises', methods=['GET'])
+def get_all_exercises():
+    exercises = Exercise.query.all()
+    exercise_list = []
+    for exercise in exercises:
+        exercise_data = {
+            'id': exercise.id,
+            'category': exercise.category,
+            'name': exercise.name,
+            'main_target': exercise.main_target,
+            'secondary_target': exercise.secondary_target
+        }
+        exercise_list.append(exercise_data)
+    return jsonify({'exercises': exercise_list})
+
+@app.route('/get_exercise/<int:exercise_id>', methods=['GET'])
+def get_exercise(exercise_id):
+    exercise = Exercise.query.get(exercise_id)
+    if exercise is None:
+        return jsonify({'message': 'Exercise not found'}), 404
+    exercise_data = {
+        'id': exercise.id,
+        'category': exercise.category,
+        'name': exercise.name,
+        'main_target': exercise.main_target,
+        'secondary_target': exercise.secondary_target
+    }
+    return jsonify({'exercise': exercise_data})
 
 if __name__ == '__main__':
     app.run(debug=True)
