@@ -12,7 +12,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
-CORS(app)
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 class User(db.Model):
     __tablename__ = 'user'
