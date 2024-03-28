@@ -42,8 +42,8 @@ class UserExercise(db.Model):
 @app.route('/register', methods=['POST'])
 def register():
     try:
-        email = request.form['email']
-        password = request.form['password']
+        email = request.json['email']
+        password = request.json['password']
         hashed_password = generate_password_hash(password)
         
         existing_user = User.query.filter_by(email=email).first()
@@ -84,9 +84,10 @@ def show_login_page():
 
 @app.route('/login', methods=['POST'])
 def login():
+    # breakpoint()
     try:
-        email = request.form['email']
-        password = request.form['password']
+        email = request.json['email']
+        password = request.json['password']
 
         user = User.query.filter_by(email=email).first()
         if user and check_password_hash(user.password, password):
