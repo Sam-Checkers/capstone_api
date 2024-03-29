@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, redirect, url_for, session
+from flask import Flask, render_template, request, jsonify, redirect, url_for, session, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_cors import CORS
@@ -140,6 +140,10 @@ def get_exercise(exercise_id):
         'secondary_target': exercise.secondary_target
     }
     return jsonify({'exercise': exercise_data})
+
+@app.route('/get_image/<image_name>')
+def get_image(image_name):
+    return send_from_directory('images', image_name)
 
 if __name__ == '__main__':
     app.run(debug=True)
