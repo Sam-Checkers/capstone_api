@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash
+from flask_login import LoginManager
 
 
 app = Flask(__name__)
@@ -11,6 +12,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://jmzqeonv:1WgKhEutN5IXxPPo6
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
+login_manager = LoginManager(app)
 
 CORS(app, resources={r"/*": {"origins": "*"}})
 
@@ -78,26 +80,6 @@ def user_profile(user_id):
     else:
         return "User not found", 404
     
-@app.route('/signin', methods=['GET'])
-def show_login_page():
-    return render_template('login.html')
-
-@app.route('/login', methods=['POST'])
-def login():
-    # breakpoint()
-    try:
-        email = request.json['email']
-        password = request.json['password']
-
-        user = User.query.filter_by(email=email).first()
-        if user and check_password_hash(user.password, password):
-            session['user_id'] = user.id
-            return "Login successful"
-        else:
-            return "Invalid email or password", 401
-    except Exception as e:
-        return f"An error occurred: {str(e)}", 500
-    
 @app.route('/add_user_exercise/<int:exercise_id>', methods=['POST'])
 def add_user_exercise(exercise_id):
     try:
@@ -111,6 +93,47 @@ def add_user_exercise(exercise_id):
             return "User not logged in", 401
     except Exception as e:
         return f"An error occurred: {str(e)}", 500
+    
+@app.route('/remove_user_exercise/<int:exercise_id>', methods=['DELETE'])
+def remove_user_exercise(exercise_id):
+    try:
+        if 'user_id' in session:
+            user_id = session['user_id']
+            user_exercise = UserExercise.query.filter_by(user_id=user_id, exercise_id=exercise_id).first()
+            if user_exercise:
+                db.session.delete(user_exercise)
+                db.session.commit()
+                return "Exercise removed successfully"
+            else:
+                return "Exercise not found for the user", 404
+        else:
+            return "User not logged in", 401
+    except Exception as e:
+        return f"An error occurred: {str(e)}", 500
+    
+@app.route('/signin', methods=['GET'])
+def show_login_page():
+    return render_template('login.html')
+
+@app.route('/login', methods=['POST'])
+def login():
+    try:
+        email = request.json['email']
+        password = request.json['password']
+
+        user = User.query.filter_by(email=email).first()
+        if user and check_password_hash(user.password, password):
+            session['user_id'] = user.id
+            return "Login successful"
+        else:
+            return "Invalid email or password", 401
+    except Exception as e:
+        return f"An error occurred: {str(e)}", 500
+    
+@app.route('/logout', methods=['GET'])
+def logout():
+    session.pop('user_id', None)
+    return "Logged out successfully"
     
 @app.route('/get_all_exercises', methods=['GET'])
 def get_all_exercises():

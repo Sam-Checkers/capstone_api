@@ -27,9 +27,39 @@
                 <form method="post" action="{{ url_for('add_user_exercise', exercise_id=exercise.id) }}">
                     <input type="submit" value="Add">
                 </form>
+                <form id="removeForm_{{ exercise.id }}" action="{{ url_for('remove_user_exercise', exercise_id=exercise.id) }}">
+                    <input type="submit" value="Remove">
+                </form>
             </td>
         </tr>
         {% endfor %}
     </table>
+
+    <script>
+        // JavaScript to send a DELETE request when the "Remove" button is clicked
+        document.querySelectorAll('form[id^="removeForm_"]').forEach(form => {
+            form.addEventListener('submit', function(event) {
+                event.preventDefault(); // Prevent the default form submission
+                const exerciseId = this.id.split('_').pop(); // Extract the exercise ID from the form ID
+                fetch(`/remove_user_exercise/${exerciseId}`, {
+                    method: 'DELETE',
+                })
+                .then(response => {
+                    if (response.ok) {
+                        // Handle successful response
+                        console.log('Exercise removed successfully');
+                        // Optionally, update the UI to reflect the removal of the exercise
+                    } else {
+                        // Handle error response
+                        console.error('Failed to remove exercise');
+                    }
+                })
+                .catch(error => {
+                    // Handle network or other errors
+                    console.error('An error occurred:', error);
+                });
+            });
+        });
+    </script>
 </body>
 </html>

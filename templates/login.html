@@ -8,7 +8,8 @@
 </head>
 <body>
     <h1>Login</h1>
-    <form action="/login" method="post">
+    <div id="error-message"></div>
+    <form id="login-form">
         <div>
             <label for="email">Email:</label>
             <input type="email" id="email" name="email" required>
@@ -21,5 +22,33 @@
             <input type="submit" value="Login">
         </div>
     </form>
+
+    <script>
+        document.getElementById('login-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const formData = new FormData(this);
+            const jsonData = {};
+            formData.forEach((value, key) => { jsonData[key] = value });
+            fetch('/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(jsonData)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Invalid email or password');
+                }
+                return response.text();
+            })
+            .then(data => {
+                console.log(data); // Handle successful login response
+            })
+            .catch(error => {
+                document.getElementById('error-message').innerText = error.message;
+            });
+        });
+    </script>
 </body>
 </html>
