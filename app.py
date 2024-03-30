@@ -3,8 +3,6 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_login import LoginManager
-
 
 app = Flask(__name__)
 app.secret_key = '12345'
@@ -12,7 +10,6 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://jmzqeonv:1WgKhEutN5IXxPPo6
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
-login_manager = LoginManager(app)
 
 CORS(app, resources={r"/*": {"origins": "*"}})
 
@@ -132,8 +129,11 @@ def login():
     
 @app.route('/logout', methods=['GET'])
 def logout():
-    session.pop('user_id', None)
-    return "Logged out successfully"
+    try:
+        session.pop('user_id', None)  # Clear the user's session
+        return "Logout successful"
+    except Exception as e:
+        return f"An error occurred: {str(e)}", 500
     
 @app.route('/get_all_exercises', methods=['GET'])
 def get_all_exercises():
