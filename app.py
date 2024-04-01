@@ -34,9 +34,43 @@ class UserExercise(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     exercise_id = db.Column(db.Integer, db.ForeignKey('exercise.id'), nullable=False)
+    day = db.Column(db.String(50))
 
     user = db.relationship('User', backref=db.backref('user_exercises', cascade='all, delete-orphan'))
     exercise = db.relationship('Exercise', backref=db.backref('exercise_users', cascade='all, delete-orphan'))
+
+@app.route('/add_user_exercise/<int:exercise_id>', methods=['POST'])
+def add_user_exercise(exercise_id):
+    try:
+        if 'user_id' in session:
+            user_id = session['user_id']
+            day = request.form.get('day')
+            new_user_exercise = UserExercise(user_id=user_id, exercise_id=exercise_id, day=day)
+            db.session.add(new_user_exercise)
+            db.session.commit()
+            return "Exercise added successfully"
+        else:
+            return "User not logged in", 401
+    except Exception as e:
+        return f"An error occurred: {str(e)}", 500
+    
+@app.route('/remove_user_exercise/<int:exercise_id>', methods=['DELETE'])
+def remove_user_exercise(exercise_id):
+    try:
+        if 'user_id' in session:
+            user_id = session['user_id']
+            day = request.form.get('day')  # Get the day value from the request
+            user_exercise = UserExercise.query.filter_by(user_id=user_id, exercise_id=exercise_id, day=day).first()  # Include the day value in the query
+            if user_exercise:
+                db.session.delete(user_exercise)
+                db.session.commit()
+                return "Exercise removed successfully"
+            else:
+                return "Exercise not found for the user on the specified day", 404  # Update the error message
+        else:
+            return "User not logged in", 401
+    except Exception as e:
+        return f"An error occurred: {str(e)}", 500
 
 @app.route('/register', methods=['POST'])
 def register():
@@ -76,37 +110,6 @@ def user_profile(user_id):
         return render_template('profile.html', user=user)
     else:
         return "User not found", 404
-    
-@app.route('/add_user_exercise/<int:exercise_id>', methods=['POST'])
-def add_user_exercise(exercise_id):
-    try:
-        if 'user_id' in session:
-            user_id = session['user_id']
-            new_user_exercise = UserExercise(user_id=user_id, exercise_id=exercise_id)
-            db.session.add(new_user_exercise)
-            db.session.commit()
-            return "Exercise added successfully"
-        else:
-            return "User not logged in", 401
-    except Exception as e:
-        return f"An error occurred: {str(e)}", 500
-    
-@app.route('/remove_user_exercise/<int:exercise_id>', methods=['DELETE'])
-def remove_user_exercise(exercise_id):
-    try:
-        if 'user_id' in session:
-            user_id = session['user_id']
-            user_exercise = UserExercise.query.filter_by(user_id=user_id, exercise_id=exercise_id).first()
-            if user_exercise:
-                db.session.delete(user_exercise)
-                db.session.commit()
-                return "Exercise removed successfully"
-            else:
-                return "Exercise not found for the user", 404
-        else:
-            return "User not logged in", 401
-    except Exception as e:
-        return f"An error occurred: {str(e)}", 500
     
 @app.route('/signin', methods=['GET'])
 def show_login_page():
