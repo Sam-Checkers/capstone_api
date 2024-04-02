@@ -44,33 +44,35 @@ def add_user_exercise(exercise_id):
     try:
         if 'user_id' in session:
             user_id = session['user_id']
-            day = request.form.get('day')
+            data = request.get_json()
+            day = data.get('day')
             new_user_exercise = UserExercise(user_id=user_id, exercise_id=exercise_id, day=day)
             db.session.add(new_user_exercise)
             db.session.commit()
-            return "Exercise added successfully"
+            return jsonify({"message": "Exercise added successfully"})
         else:
-            return "User not logged in", 401
+            return jsonify({"error": "User not logged in"}), 401
     except Exception as e:
-        return f"An error occurred: {str(e)}", 500
+        return jsonify({"error": f"An error occurred: {str(e)}"}), 500
     
 @app.route('/remove_user_exercise/<int:exercise_id>', methods=['DELETE'])
 def remove_user_exercise(exercise_id):
     try:
         if 'user_id' in session:
             user_id = session['user_id']
-            day = request.form.get('day')  # Get the day value from the request
-            user_exercise = UserExercise.query.filter_by(user_id=user_id, exercise_id=exercise_id, day=day).first()  # Include the day value in the query
+            data = request.get_json()
+            day = data.get('day')
+            user_exercise = UserExercise.query.filter_by(user_id=user_id, exercise_id=exercise_id, day=day).first()
             if user_exercise:
                 db.session.delete(user_exercise)
                 db.session.commit()
-                return "Exercise removed successfully"
+                return jsonify({"message": "Exercise removed successfully"})
             else:
-                return "Exercise not found for the user on the specified day", 404  # Update the error message
+                return jsonify({"error": "Exercise not found for the user on the specified day"}), 404
         else:
-            return "User not logged in", 401
+            return jsonify({"error": "User not logged in"}), 401
     except Exception as e:
-        return f"An error occurred: {str(e)}", 500
+        return jsonify({"error": f"An error occurred: {str(e)}"}), 500
 
 @app.route('/register', methods=['POST'])
 def register():
