@@ -126,7 +126,7 @@ def login():
         user = User.query.filter_by(email=email).first()
         if user and check_password_hash(user.password, password):
             session['user_id'] = user.id
-            return "Login successful"
+            return jsonify({'user_id': user.id})
         else:
             return "Invalid email or password", 401
     except Exception as e:
