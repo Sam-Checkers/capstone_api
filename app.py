@@ -72,7 +72,7 @@ def login():
 
         user = User.query.filter_by(email=email).first()
         if user and check_password_hash(user.password, password):
-            token = jwt.encode({'user_id': user.id}, app.secret_key, algorithm='HS256')
+            token = jwt.encode({'user_id': user.id}, app.config['SECRET_KEY'], algorithm='HS256')
             return jsonify({'token': token})
         else:
             return "Invalid email or password", 401
@@ -90,11 +90,9 @@ def token_required(f):
         if not token:
             return jsonify({'error': 'Token is missing'}), 401
         try:
-            data = jwt.decode(token, app.secret_key, algorithms=['HS256'])
+            data = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
             current_user = User.query.get(data['user_id'])
-        except jwt.ExpiredSignatureError:
-            return jsonify({'error': 'Token has expired'}), 401
-        except jwt.InvalidTokenError:
+        except:
             return jsonify({'error': 'Invalid token'}), 401
         return f(current_user, *args, **kwargs)
     return decorated_function
