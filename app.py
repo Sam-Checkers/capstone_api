@@ -9,7 +9,7 @@ import os
 import datetime
 
 app = Flask(__name__)
-app.secret_key = '12345'
+app.config['SECRET_KEY'] = '12345'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://jmzqeonv:1WgKhEutN5IXxPPo6E0AZFpyAp2bWMFf@raja.db.elephantsql.com/jmzqeonv'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
@@ -58,7 +58,7 @@ def register():
         db.session.add(new_user)
         db.session.commit()
 
-        token = jwt.encode({'email': email}, app.secret_key, algorithm='HS256')
+        token = jwt.encode({'email': email}, app.config['SECRET_KEY'], algorithm='HS256')
 
         return jsonify({'message': 'User registered successfully', 'token': token})
     except Exception as e:
