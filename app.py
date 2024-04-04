@@ -58,7 +58,6 @@ def register():
         db.session.add(new_user)
         db.session.commit()
 
-        # Encode a JWT token
         token = jwt.encode({'email': email}, app.secret_key, algorithm='HS256')
 
         return jsonify({'message': 'User registered successfully', 'token': token})
@@ -73,7 +72,6 @@ def login():
 
         user = User.query.filter_by(email=email).first()
         if user and check_password_hash(user.password, password):
-            # Encode a JWT token
             token = jwt.encode({'user_id': user.id}, app.secret_key, algorithm='HS256')
             return jsonify({'token': token})
         else:
