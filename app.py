@@ -23,6 +23,7 @@ class User(db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(255), nullable=False)
     exercises = db.relationship('Exercise', backref='user', cascade='all, delete-orphan')
+
 class Exercise(db.Model):
     __tablename__ = 'exercise'
     id = db.Column(db.Integer, primary_key=True)
@@ -57,15 +58,12 @@ def register():
         db.session.add(new_user)
         db.session.commit()
 
+        # Encode a JWT token
         token = jwt.encode({'email': email}, app.secret_key, algorithm='HS256')
 
         return jsonify({'message': 'User registered successfully', 'token': token})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
-@app.route('/signin', methods=['GET'])
-def show_login_page():
-    return render_template('login.html')
 
 @app.route('/login', methods=['POST'])
 def login():
@@ -75,7 +73,7 @@ def login():
 
         user = User.query.filter_by(email=email).first()
         if user and check_password_hash(user.password, password):
-            # Create a JWT token with user_id and expiration timer
+            # Encode a JWT token
             token = jwt.encode({'user_id': user.id}, app.secret_key, algorithm='HS256')
             return jsonify({'token': token})
         else:
