@@ -3,17 +3,21 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash
-import jwt
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity, verify_jwt_in_request
 from functools import wraps
-import os
-import datetime
+from flask_jwt_extended import create_access_token
+from flask_jwt_extended import get_jwt_identity
+from flask_jwt_extended import jwt_required
+from flask_jwt_extended import JWTManager
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = '12345'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://jmzqeonv:1WgKhEutN5IXxPPo6E0AZFpyAp2bWMFf@raja.db.elephantsql.com/jmzqeonv'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['JWT_SECRET_KEY'] = '12345'
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
+jwt = JWTManager(app)
 
 CORS(app, resources={r"/*": {"origins": "*"}})
 
@@ -22,7 +26,6 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(255), nullable=False)
-    exercises = db.relationship('Exercise', backref='user', cascade='all, delete-orphan')
 
 class Exercise(db.Model):
     __tablename__ = 'exercise'
@@ -45,39 +48,44 @@ class UserExercise(db.Model):
 
 @app.route('/register', methods=['POST'])
 def register():
-    try:
-        email = request.json['email']
-        password = request.json['password']
-        hashed_password = generate_password_hash(password)
-        
-        existing_user = User.query.filter_by(email=email).first()
-        if existing_user:
-            return jsonify({'error': 'Email already registered'}), 400
+    email = request.json.get('email', None)
+    password = request.json.get('password', None)
 
-        new_user = User(email=email, password=hashed_password)
-        db.session.add(new_user)
-        db.session.commit()
+    if not email or not password:
+        return jsonify({"msg": "Missing email or password"}), 400
 
-        token = jwt.encode({'email': email}, app.config['SECRET_KEY'], algorithm='HS256')
+    existing_user = User.query.filter_by(email=email).first()
+    if existing_user:
+        return jsonify({"msg": "User already exists"}), 400
 
-        return jsonify({'message': 'User registered successfully', 'token': token})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+    new_user = User(email=email, password=generate_password_hash(password))
+    db.session.add(new_user)
+    db.session.commit()
+
+    access_token = create_access_token(identity=email, expires_delta=False)
+    return jsonify(access_token=access_token), 200
+
 
 @app.route('/login', methods=['POST'])
 def login():
-    try:
-        email = request.json['email']
-        password = request.json['password']
+    email = request.json.get('email', None)
+    password = request.json.get('password', None)
 
-        user = User.query.filter_by(email=email).first()
-        if user and check_password_hash(user.password, password):
-            token = jwt.encode({'user_id': user.id}, app.config['SECRET_KEY'], algorithm='HS256')
-            return jsonify({'token': token})
-        else:
-            return "Invalid email or password", 401
-    except Exception as e:
-        return f"An error occurred: {str(e)}", 500
+    if not email or not password:
+        return jsonify({"msg": "Missing email or password"}), 400
+
+    user = User.query.filter_by(email=email).first()
+    if not user or not check_password_hash(user.password, password):
+        return jsonify({"msg": "Invalid email or password"}), 401
+
+    access_token = create_access_token(identity=email)
+    return jsonify(access_token=access_token), 200
+    
+@app.route('/protected', methods=['GET'])
+@jwt_required()
+def protected():
+    current_user = get_jwt_identity()
+    return jsonify(logged_in_as=current_user), 200
 
 @app.route('/logout', methods=['GET'])
 def logout():
@@ -86,15 +94,15 @@ def logout():
 def token_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        token = request.headers.get('Authorization')
-        if not token:
-            return jsonify({'error': 'Token is missing'}), 401
         try:
-            data = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
-            current_user = User.query.get(data['user_id'])
+            verify_jwt_in_request()  # Verify the JWT token in the request
+            current_user_identity = get_jwt_identity()
+            current_user = User.query.filter_by(email=current_user_identity).first()  # Retrieve the user object from the database
+            if current_user is None:
+                return jsonify({"error": "User not found"}), 401
+            return f(current_user, *args, **kwargs)
         except:
-            return jsonify({'error': 'Invalid token'}), 401
-        return f(current_user, *args, **kwargs)
+            return jsonify({"error": "Invalid or missing JWT token"}), 401
     return decorated_function
 
 @app.route('/add_user_exercise/<int:exercise_id>', methods=['POST'])
