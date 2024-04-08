@@ -26,6 +26,7 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(255), nullable=False)
+    token = db.Column(db.String)
 
 class Exercise(db.Model):
     __tablename__ = 'exercise'
@@ -95,9 +96,9 @@ def token_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         try:
-            verify_jwt_in_request()  # Verify the JWT token in the request
+            verify_jwt_in_request()
             current_user_identity = get_jwt_identity()
-            current_user = User.query.filter_by(email=current_user_identity).first()  # Retrieve the user object from the database
+            current_user = User.query.filter_by(email=current_user_identity).first()
             if current_user is None:
                 return jsonify({"error": "User not found"}), 401
             return f(current_user, *args, **kwargs)
