@@ -91,7 +91,7 @@ def token_required(f):
             verify_jwt_in_request()
             current_user_identity = get_jwt_identity()
             print("Current User Identity:", current_user_identity)
-            current_user = User.query.get(current_user_identity)  # Assuming the identity is the user's ID
+            current_user = User.query.get(current_user_identity)
             if current_user is None:
                 print("Current User Not Found")
                 return jsonify({"error": "User not found"}), 401
