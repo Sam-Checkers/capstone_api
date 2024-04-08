@@ -18,16 +18,13 @@ app.config['JWT_SECRET_KEY'] = '12345'
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 jwt = JWTManager(app)
-
 CORS(app, resources={r"/*": {"origins": "*"}})
-
 class User(db.Model):
     __tablename__ = 'user'
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(255), nullable=False)
     token = db.Column(db.String)
-
 class Exercise(db.Model):
     __tablename__ = 'exercise'
     id = db.Column(db.Integer, primary_key=True)
@@ -36,7 +33,6 @@ class Exercise(db.Model):
     main_target = db.Column(db.String(120), nullable=False)
     secondary_target = db.Column(db.String(120), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-
 class UserExercise(db.Model):
     __tablename__ = 'user_exercise'
     id = db.Column(db.Integer, primary_key=True)
@@ -60,37 +56,24 @@ def register():
         return jsonify({"msg": "User already exists"}), 400
 
     new_user = User(email=email, password=generate_password_hash(password))
-    
     access_token = create_access_token(identity=new_user.id, expires_delta=False)
-    
     new_user.token = access_token
-    
     db.session.add(new_user)
-    
     db.session.commit()
-
     return jsonify(access_token=access_token), 200
-
 
 @app.route('/login', methods=['POST'])
 def login():
     email = request.json.get('email', None)
     password = request.json.get('password', None)
-
     if not email or not password:
         return jsonify({"msg": "Missing email or password"}), 400
-
     user = User.query.filter_by(email=email).first()
     if not user or not check_password_hash(user.password, password):
         return jsonify({"msg": "Invalid email or password"}), 401
-
-    # Retrieve the existing token associated with the user from the database
     existing_token = user.token
-
-    # Return the existing token in the response
     return jsonify(access_token=existing_token), 200
 
-    
 @app.route('/protected', methods=['GET'])
 @jwt_required()
 def protected():
@@ -107,11 +90,14 @@ def token_required(f):
         try:
             verify_jwt_in_request()
             current_user_identity = get_jwt_identity()
-            current_user = User.query.filter_by(email=current_user_identity).first()
+            print("Current User Identity:", current_user_identity)
+            current_user = User.query.get(current_user_identity)  # Assuming the identity is the user's ID
             if current_user is None:
+                print("Current User Not Found")
                 return jsonify({"error": "User not found"}), 401
             return f(current_user, *args, **kwargs)
         except:
+            print("Token Verification Error")
             return jsonify({"error": "Invalid or missing JWT token"}), 401
     return decorated_function
 
