@@ -60,10 +60,19 @@ def register():
         return jsonify({"msg": "User already exists"}), 400
 
     new_user = User(email=email, password=generate_password_hash(password))
+    
+    # Generate access token
+    access_token = create_access_token(identity=email, expires_delta=False)
+    
+    # Set the token for the new user
+    new_user.token = access_token
+    
+    # Add the new user to the session
     db.session.add(new_user)
+    
+    # Commit the session to save the user with the access token
     db.session.commit()
 
-    access_token = create_access_token(identity=email, expires_delta=False)
     return jsonify(access_token=access_token), 200
 
 
