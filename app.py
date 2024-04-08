@@ -61,16 +61,12 @@ def register():
 
     new_user = User(email=email, password=generate_password_hash(password))
     
-    # Generate access token
-    access_token = create_access_token(identity=email, expires_delta=False)
+    access_token = create_access_token(identity=new_user.id, expires_delta=False)
     
-    # Set the token for the new user
     new_user.token = access_token
     
-    # Add the new user to the session
     db.session.add(new_user)
     
-    # Commit the session to save the user with the access token
     db.session.commit()
 
     return jsonify(access_token=access_token), 200
@@ -88,8 +84,12 @@ def login():
     if not user or not check_password_hash(user.password, password):
         return jsonify({"msg": "Invalid email or password"}), 401
 
-    access_token = create_access_token(identity=email)
-    return jsonify(access_token=access_token), 200
+    # Retrieve the existing token associated with the user from the database
+    existing_token = user.token
+
+    # Return the existing token in the response
+    return jsonify(access_token=existing_token), 200
+
     
 @app.route('/protected', methods=['GET'])
 @jwt_required()
