@@ -132,12 +132,12 @@ def token_required(f):
 
 @app.route('/add_user_exercise/<int:exercise_id>', methods=['POST'])
 @token_required
-def add_user_exercise(token, exercise_id):
+def add_user_exercise(current_user, exercise_id):
     try:
         data = request.get_json()
         day = data.get('day')
-        current_user = User.query.filter_by(token=token).first()
-        new_user_exercise = UserExercise(user_id=current_user.id, exercise_id=exercise_id, day=day)
+
+        new_user_exercise = UserExercise(user_id=current_user.id, exercise_id=exercise_id, day=day)  # Use current_user.id instead of current_user
         db.session.add(new_user_exercise)
         db.session.commit()
         return jsonify({"message": "Exercise added successfully"})
