@@ -43,6 +43,25 @@ class UserExercise(db.Model):
     user = db.relationship('User', backref=db.backref('user_exercises', cascade='all, delete-orphan'))
     exercise = db.relationship('Exercise', backref=db.backref('exercise_users', cascade='all, delete-orphan'))
 
+
+@app.route('/user_exercise/<int:user_id>', methods=['GET'])
+@jwt_required()
+def get_user_exercise(user_id):
+    user_exercises = UserExercise.query.filter_by(user_id=user_id).all()
+    if user_exercises:
+        user_exercise_data = []
+        for user_exercise in user_exercises:
+            user_exercise_info = {
+                'id': user_exercise.id,
+                'user_id': user_exercise.user_id,
+                'exercise_id': user_exercise.exercise_id,
+                'day': user_exercise.day
+            }
+            user_exercise_data.append(user_exercise_info)
+        return jsonify(user_exercise_data), 200
+    else:
+        return jsonify({'message': 'No user exercises found for the user id'}), 404
+
 @app.route('/register', methods=['POST'])
 def register():
     email = request.json.get('email', None)
