@@ -85,7 +85,7 @@ def logout():
 
 @app.route('/get_user_id/<token>', methods=['GET'])
 def get_user_id(token):
-    user = User.query.filter_by(token=token).first()  # Query the User table to find the user with the given token
+    user = User.query.filter_by(token=token).first()
     if user:
         return jsonify({'user_id': user.id})
     else:
@@ -104,16 +104,14 @@ def token_required(f):
             return f(current_user.token, *args, **kwargs)
     return decorated_function
 
-@app.route('/add_user_exercise/<int:user_id>/<int:exercise_num>', methods=['POST'])
+@app.route('/add_user_exercise/<int:exercise_id>', methods=['POST'])
 @token_required
-def add_user_exercise(token, user_id, exercise_num):
+def add_user_exercise(token, exercise_id):
     try:
         data = request.get_json()
         day = data.get('day')
-        print('here')
-        current_user = User.query.get(user_id)
-        new_user_exercise = UserExercise(user_id=current_user.id, exercise_id=exercise_num, day=day)
-        print('instance created')
+        current_user = User.query.filter_by(token=token).first()
+        new_user_exercise = UserExercise(user_id=current_user.id, exercise_id=exercise_id, day=day)
         db.session.add(new_user_exercise)
         db.session.commit()
         return jsonify({"message": "Exercise added successfully"})
