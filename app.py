@@ -55,11 +55,10 @@ def register():
     if existing_user:
         return jsonify({"msg": "User already exists"}), 400
 
-    new_user = User(email=email, password=generate_password_hash(password))
-    access_token = create_access_token(identity=new_user.id, expires_delta=False)
-    new_user.token = access_token
+    new_user = User(email=email, password=generate_password_hash(password), token=create_access_token(identity=email, expires_delta=False))
     db.session.add(new_user)
     db.session.commit()
+    access_token = new_user.token
     return jsonify(access_token=access_token), 200
 
 @app.route('/login', methods=['POST'])
@@ -84,30 +83,37 @@ def protected():
 def logout():
     return "Logout successful"
 
+@app.route('/get_user_id/<token>', methods=['GET'])
+def get_user_id(token):
+    user = User.query.filter_by(token=token).first()  # Query the User table to find the user with the given token
+    if user:
+        return jsonify({'user_id': user.id})
+    else:
+        return jsonify({'error': 'User not found for the given token'}), 404
+
 def token_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        try:
             verify_jwt_in_request()
             current_user_identity = get_jwt_identity()
             print("Current User Identity:", current_user_identity)
-            current_user = User.query.get(current_user_identity)
+            current_user = User.query.filter(User.email == current_user_identity).first()
             if current_user is None:
                 print("Current User Not Found")
                 return jsonify({"error": "User not found"}), 401
-            return f(current_user, *args, **kwargs)
-        except:
-            print("Token Verification Error")
-            return jsonify({"error": "Invalid or missing JWT token"}), 401
+            return f(current_user.token, *args, **kwargs)
     return decorated_function
 
-@app.route('/add_user_exercise/<int:exercise_id>', methods=['POST'])
+@app.route('/add_user_exercise/<int:user_id>/<int:exercise_num>', methods=['POST'])
 @token_required
-def add_user_exercise(current_user, exercise_id):
+def add_user_exercise(token, user_id, exercise_num):
     try:
         data = request.get_json()
         day = data.get('day')
-        new_user_exercise = UserExercise(user_id=current_user.id, exercise_id=exercise_id, day=day)
+        print('here')
+        current_user = User.query.get(user_id)
+        new_user_exercise = UserExercise(user_id=current_user.id, exercise_id=exercise_num, day=day)
+        print('instance created')
         db.session.add(new_user_exercise)
         db.session.commit()
         return jsonify({"message": "Exercise added successfully"})
