@@ -113,14 +113,21 @@ def get_user_id(token):
 def token_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-            verify_jwt_in_request()
-            current_user_identity = get_jwt_identity()
-            print("Current User Identity:", current_user_identity)
-            current_user = User.query.filter(User.email == current_user_identity).first()
-            if current_user is None:
-                print("Current User Not Found")
-                return jsonify({"error": "User not found"}), 401
-            return f(current_user.token, *args, **kwargs)
+        token = None
+        if 'Authorization' in request.headers:
+            token = request.headers['Authorization'].split()[1]  # Extract the token from the 'Authorization' header
+
+        if not token:
+            return jsonify({"error": "Token is missing"}), 401
+
+        try:
+            current_user = User.query.filter_by(token=token).first()
+            if not current_user:
+                return jsonify({"error": "Invalid token"}), 401
+        except Exception as e:
+            return jsonify({"error": f"An error occurred: {str(e)}"}), 500
+
+        return f(current_user, *args, **kwargs)  # Pass the current_user object instead of the token
     return decorated_function
 
 @app.route('/add_user_exercise/<int:exercise_id>', methods=['POST'])
@@ -140,16 +147,21 @@ def add_user_exercise(token, exercise_id):
 
 @app.route('/remove_user_exercise/<int:exercise_id>', methods=['DELETE'])
 @token_required
-def remove_user_exercise(token, exercise_id):
+def remove_user_exercise(current_user, exercise_id):
     try:
-        current_user = User.query.filter_by(token=token).first()
-        user_exercise = UserExercise.query.filter_by(user_id=current_user.id, exercise_id=exercise_id).first()
+        data = request.get_json()
+        day = data.get('day')
+
+        # Find the user's exercise based on the exercise id and the day
+        user_exercise = UserExercise.query.filter_by(user_id=current_user.id, exercise_id=exercise_id, day=day).first()
+
         if user_exercise:
+            # Delete the user's exercise
             db.session.delete(user_exercise)
             db.session.commit()
             return jsonify({"message": "Exercise removed successfully"})
         else:
-            return jsonify({"error": "User exercise not found"}), 404
+            return jsonify({"error": "Exercise not found for the specified day and exercise id"}), 404
     except Exception as e:
         return jsonify({"error": f"An error occurred: {str(e)}"}), 500
 
