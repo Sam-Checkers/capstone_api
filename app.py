@@ -137,19 +137,19 @@ def add_user_exercise(token, exercise_id):
     except Exception as e:
         return jsonify({"error": f"An error occurred: {str(e)}"}), 500
 
+
 @app.route('/remove_user_exercise/<int:exercise_id>', methods=['DELETE'])
 @token_required
-def remove_user_exercise(current_user, exercise_id):
+def remove_user_exercise(token, exercise_id):
     try:
-        data = request.get_json()
-        day = data.get('day')
-        user_exercise = UserExercise.query.filter_by(user_id=current_user.id, exercise_id=exercise_id, day=day).first()
+        current_user = User.query.filter_by(token=token).first()
+        user_exercise = UserExercise.query.filter_by(user_id=current_user.id, exercise_id=exercise_id).first()
         if user_exercise:
             db.session.delete(user_exercise)
             db.session.commit()
             return jsonify({"message": "Exercise removed successfully"})
         else:
-            return jsonify({"error": "Exercise not found for the user on the specified day"}), 404
+            return jsonify({"error": "User exercise not found"}), 404
     except Exception as e:
         return jsonify({"error": f"An error occurred: {str(e)}"}), 500
 
