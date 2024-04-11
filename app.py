@@ -115,7 +115,7 @@ def token_required(f):
     def decorated_function(*args, **kwargs):
         token = None
         if 'Authorization' in request.headers:
-            token = request.headers['Authorization'].split()[1]  # Extract the token from the 'Authorization' header
+            token = request.headers['Authorization'].split()[1]
 
         if not token:
             return jsonify({"error": "Token is missing"}), 401
@@ -127,7 +127,7 @@ def token_required(f):
         except Exception as e:
             return jsonify({"error": f"An error occurred: {str(e)}"}), 500
 
-        return f(current_user, *args, **kwargs)  # Pass the current_user object instead of the token
+        return f(current_user, *args, **kwargs)
     return decorated_function
 
 @app.route('/add_user_exercise/<int:exercise_id>', methods=['POST'])
@@ -137,7 +137,11 @@ def add_user_exercise(current_user, exercise_id):
         data = request.get_json()
         day = data.get('day')
 
-        new_user_exercise = UserExercise(user_id=current_user.id, exercise_id=exercise_id, day=day)  # Use current_user.id instead of current_user
+        existing_user_exercise = UserExercise.query.filter_by(user_id=current_user.id, exercise_id=exercise_id, day=day).first()
+        if existing_user_exercise:
+            return jsonify({"error": "Exercise already exists for this day"}), 400
+
+        new_user_exercise = UserExercise(user_id=current_user.id, exercise_id=exercise_id, day=day)
         db.session.add(new_user_exercise)
         db.session.commit()
         return jsonify({"message": "Exercise added successfully"})
@@ -152,11 +156,9 @@ def remove_user_exercise(current_user, exercise_id):
         data = request.get_json()
         day = data.get('day')
 
-        # Find the user's exercise based on the exercise id and the day
         user_exercise = UserExercise.query.filter_by(user_id=current_user.id, exercise_id=exercise_id, day=day).first()
 
         if user_exercise:
-            # Delete the user's exercise
             db.session.delete(user_exercise)
             db.session.commit()
             return jsonify({"message": "Exercise removed successfully"})
