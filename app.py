@@ -43,6 +43,44 @@ class UserExercise(db.Model):
     user = db.relationship('User', backref=db.backref('user_exercises', cascade='all, delete-orphan'))
     exercise = db.relationship('Exercise', backref=db.backref('exercise_users', cascade='all, delete-orphan'))
 
+@app.route('/add_exercise', methods=['POST'])
+def add_exercise():
+    data = request.get_json()
+    new_exercise = Exercise(
+        category=data['category'],
+        name=data['name'],
+        main_target=data['main_target'],
+        secondary_target=data['secondary_target'],
+        user_id=data['user_id']
+    )
+    db.session.add(new_exercise)
+    db.session.commit()
+    return jsonify({'message': 'Exercise added successfully'})
+
+@app.route('/delete_exercise/<int:exercise_id>', methods=['DELETE'])
+def delete_exercise(exercise_id):
+    exercise = Exercise.query.get(exercise_id)
+    if exercise:
+        db.session.delete(exercise)
+        db.session.commit()
+        return jsonify({'message': 'Exercise deleted successfully'})
+    else:
+        return jsonify({'message': 'Exercise not found'})
+    
+@app.route('/edit_exercise/<int:exercise_id>', methods=['PUT'])
+def edit_exercise(exercise_id):
+    exercise = Exercise.query.get(exercise_id)
+    if exercise:
+        data = request.get_json()
+        exercise.category = data.get('category', exercise.category)
+        exercise.name = data.get('name', exercise.name)
+        exercise.main_target = data.get('main_target', exercise.main_target)
+        exercise.secondary_target = data.get('secondary_target', exercise.secondary_target)
+        exercise.user_id = data.get('user_id', exercise.user_id)
+        db.session.commit()
+        return jsonify({'message': 'Exercise updated successfully'})
+    else:
+        return jsonify({'message': 'Exercise not found'})
 
 @app.route('/user_exercise/<int:user_id>', methods=['GET'])
 @jwt_required()
