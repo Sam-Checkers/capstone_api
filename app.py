@@ -18,7 +18,7 @@ app.config['JWT_SECRET_KEY'] = '12345'
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 jwt = JWTManager(app)
-CORS(app, resources={r"/*": {"origins": "*"}})
+CORS(app, resources={r"/*": {"origins": "https://tubular-lokum-b3922e.netlify.app"}})
 class User(db.Model):
     __tablename__ = 'user'
     id = db.Column(db.Integer, primary_key=True)
