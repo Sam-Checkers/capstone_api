@@ -10,6 +10,7 @@ from flask_jwt_extended import get_jwt_identity
 from flask_jwt_extended import jwt_required
 from flask_jwt_extended import JWTManager
 from sqlalchemy.orm import joinedload
+from sqlalchemy import Index
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = '12345'
@@ -29,11 +30,12 @@ class User(db.Model):
 class Exercise(db.Model):
     __tablename__ = 'exercise'
     id = db.Column(db.Integer, primary_key=True)
-    category = db.Column(db.String(80), nullable=False)
+    category = db.Column(db.String(80), nullable=False, index=True)
     name = db.Column(db.String(80), nullable=False)
     main_target = db.Column(db.String(120), nullable=False)
     secondary_target = db.Column(db.String(120), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+
 class UserExercise(db.Model):
     __tablename__ = 'user_exercise'
     id = db.Column(db.Integer, primary_key=True)
@@ -43,6 +45,9 @@ class UserExercise(db.Model):
 
     user = db.relationship('User', backref=db.backref('user_exercises', cascade='all, delete-orphan'))
     exercise = db.relationship('Exercise', backref=db.backref('exercise_users', cascade='all, delete-orphan'))
+
+user_exercise_user_id_index = db.Index('user_exercise_user_id_index', UserExercise.user_id)
+user_exercise_user_id_index.create(bind=db.engine)
 
 @app.route('/add_exercise', methods=['POST'])
 def add_exercise():
