@@ -27,6 +27,7 @@ class User(db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(255), nullable=False)
     token = db.Column(db.String)
+
 class Exercise(db.Model):
     __tablename__ = 'exercise'
     id = db.Column(db.Integer, primary_key=True)
@@ -39,15 +40,12 @@ class Exercise(db.Model):
 class UserExercise(db.Model):
     __tablename__ = 'user_exercise'
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
     exercise_id = db.Column(db.Integer, db.ForeignKey('exercise.id'), nullable=False)
     day = db.Column(db.String(50))
 
     user = db.relationship('User', backref=db.backref('user_exercises', cascade='all, delete-orphan'))
     exercise = db.relationship('Exercise', backref=db.backref('exercise_users', cascade='all, delete-orphan'))
-
-user_exercise_user_id_index = db.Index('user_exercise_user_id_index', UserExercise.user_id)
-user_exercise_user_id_index.create(bind=db.engine)
 
 @app.route('/add_exercise', methods=['POST'])
 def add_exercise():
