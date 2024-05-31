@@ -9,6 +9,7 @@ from flask_jwt_extended import create_access_token
 from flask_jwt_extended import get_jwt_identity
 from flask_jwt_extended import jwt_required
 from flask_jwt_extended import JWTManager
+from sqlalchemy.orm import joinedload
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = '12345'
@@ -85,7 +86,7 @@ def edit_exercise(exercise_id):
 @app.route('/user_exercise/<int:user_id>', methods=['GET'])
 @jwt_required()
 def get_user_exercise(user_id):
-    user_exercises = UserExercise.query.filter_by(user_id=user_id).all()
+    user_exercises = UserExercise.query.filter_by(user_id=user_id).options(joinedload(UserExercise.user), joinedload(UserExercise.exercise)).all()
     if user_exercises:
         user_exercise_data = []
         for user_exercise in user_exercises:
@@ -93,7 +94,15 @@ def get_user_exercise(user_id):
                 'id': user_exercise.id,
                 'user_id': user_exercise.user_id,
                 'exercise_id': user_exercise.exercise_id,
-                'day': user_exercise.day
+                'day': user_exercise.day,
+                'user': {
+                    'id': user_exercise.user.id,
+                    'email': user_exercise.user.email
+                },
+                'exercise': {
+                    'id': user_exercise.exercise.id,
+                    'category': user_exercise.exercise.category
+                }
             }
             user_exercise_data.append(user_exercise_info)
         return jsonify(user_exercise_data), 200
