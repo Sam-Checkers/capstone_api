@@ -11,8 +11,10 @@ from flask_jwt_extended import jwt_required
 from flask_jwt_extended import JWTManager
 from sqlalchemy.orm import joinedload
 from sqlalchemy import Index
+from flask_caching import Cache
 
 app = Flask(__name__)
+cache = Cache(app, config={'CACHE_TYPE': 'simple'})
 app.config['SECRET_KEY'] = '12345'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://jmzqeonv:1WgKhEutN5IXxPPo6E0AZFpyAp2bWMFf@raja.db.elephantsql.com/jmzqeonv'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -88,29 +90,30 @@ def edit_exercise(exercise_id):
 
 @app.route('/user_exercise/<int:user_id>', methods=['GET'])
 @jwt_required()
+@cache.cached(timeout=60, query_string=True)
 def get_user_exercise(user_id):
-    user_exercises = UserExercise.query.filter_by(user_id=user_id).options(joinedload(UserExercise.user), joinedload(UserExercise.exercise)).all()
-    if user_exercises:
-        user_exercise_data = []
-        for user_exercise in user_exercises:
-            user_exercise_info = {
-                'id': user_exercise.id,
-                'user_id': user_exercise.user_id,
-                'exercise_id': user_exercise.exercise_id,
-                'day': user_exercise.day,
-                'user': {
-                    'id': user_exercise.user.id,
-                    'email': user_exercise.user.email
-                },
-                'exercise': {
-                    'id': user_exercise.exercise.id,
-                    'category': user_exercise.exercise.category
-                }
-            }
-            user_exercise_data.append(user_exercise_info)
-        return jsonify(user_exercise_data), 200
-    else:
-        return jsonify({'message': 'No user exercises found for the user id'}), 404
+       user_exercises = UserExercise.query.filter_by(user_id=user_id).options(joinedload(UserExercise.user), joinedload(UserExercise.exercise)).all()
+       if user_exercises:
+           user_exercise_data = []
+           for user_exercise in user_exercises:
+               user_exercise_info = {
+                   'id': user_exercise.id,
+                   'user_id': user_exercise.user_id,
+                   'exercise_id': user_exercise.exercise_id,
+                   'day': user_exercise.day,
+                   'user': {
+                       'id': user_exercise.user.id,
+                       'email': user_exercise.user.email
+                   },
+                   'exercise': {
+                       'id': user_exercise.exercise.id,
+                       'category': user_exercise.exercise.category
+                   }
+               }
+               user_exercise_data.append(user_exercise_info)
+           return jsonify(user_exercise_data), 200
+       else:
+           return jsonify({'message': 'No user exercises found for the user id'}), 404
 
 @app.route('/register', methods=['POST'])
 def register():
