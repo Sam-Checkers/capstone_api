@@ -240,7 +240,9 @@ def user_profile(user_id):
     else:
         return "User not found", 404
     
+
 @app.route('/get_all_exercises', methods=['GET'])
+@cache.cached(timeout=120)
 def get_all_exercises():
     exercises = Exercise.query.all()
     exercise_list = []
